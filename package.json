@@ -4,7 +4,7 @@
   "license": "MIT",
   "scripts": {
     "web": "npx nx web",
-    "api": "npx nx api", 
+    "api": "npx nx api",
     "graph": "npx nx graph",
     "test": "npx nx run-many -t lint test"
   },
@@ -86,11 +86,16 @@
     "@angular/ssr": "~22.2.0",
     "@juristr/nx-tailwind-sync": "^0.0.9",
     "@nestjs/common": "^11.0.0",
+    "@nestjs/config": "^12.1.1",
     "@nestjs/core": "^11.0.0",
     "@nestjs/platform-express": "^11.0.0",
     "axios": "^1.6.0",
+    "drizzle-kit": "^0.31.11",
+    "drizzle-orm": "^0.45.4",
     "express": "^4.21.2",
+    "pg": "^8.23.1",
     "reflect-metadata": "^0.2.0",
-    "rxjs": "~7.8.0"
+    "rxjs": "~7.8.0",
+    "zod": "^4.6.7"
   }
 }
