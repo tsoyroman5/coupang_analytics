@@ -1,0 +1,14 @@
+==================== 2026-11-07T11:40:51.870706Z | 01a1b5cf-b91d-75a0-bc89-69c28564e03c ====================
+11:40:51.870808 [info ]: Installing dbt project and profile setup
+11:40:51.876184 [info ]: Info Created .vscode/extensions.json with dbt extension recommendation
+11:40:51.876251 [info ]: Success Project created successfully!
+11:40:51.876281 [info ]: Info Project name: jaffle_shop
+11:40:51.876297 [info ]: Info Project directory: jaffle_shop
+11:41:00.055400 [info ]: Info Setting up your profile...
+11:41:00.056101 [info ]: Loading ~/.dbt/profiles.yml
+11:41:00.072778 [info ]: Profile 'jaffle_shop' already exists. You can choose how to proceed.
+11:41:07.548559 [info ]: Info Creating new profile...
+11:41:11.344228 [error]: [IoError (dbt1001)]: Failed to get input for project: IO error: read interrupted
+11:41:11.641605 [info ]: 
+==================== Execution Summary =====================
+Finished 'init' with 1 error [19.8s]
