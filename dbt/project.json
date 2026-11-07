@@ -1,0 +1,8 @@
+{
+  "name": "dbt",
+  "targets": {
+    "build": { "command": "dbt build", "options": { "cwd": "dbt" } },
+    "docs":  { "command": "dbt docs generate", "options": { "cwd": "dbt" } }
+  },
+  "tags": ["scope:data", "type:dbt"]
+}
