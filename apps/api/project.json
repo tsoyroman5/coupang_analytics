@@ -70,6 +70,10 @@
     "db-migrate": {
       "command": "drizzle-kit migrate --config drizzle.config.ts",
       "options": { "cwd": "apps/api" }
+    },
+    "connect-coupang": {
+      "command": "node dist/apps/api/cli.js connect-coupang",
+      "dependsOn": ["build"]
     }
   }
 }
