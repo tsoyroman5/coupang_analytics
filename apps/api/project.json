@@ -62,6 +62,14 @@
           "buildTarget": "api:build:production"
         }
       }
+    },
+    "db-generate": {
+      "command": "drizzle-kit generate --config drizzle.config.ts",
+      "options": { "cwd": "apps/api" }
+    },
+    "db-migrate": {
+      "command": "drizzle-kit migrate --config drizzle.config.ts",
+      "options": { "cwd": "apps/api" }
     }
   }
 }
