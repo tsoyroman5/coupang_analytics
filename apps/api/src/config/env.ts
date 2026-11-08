@@ -15,7 +15,6 @@ export const Env = z
       ),
     CREDENTIALS_KEY_VERSION: z.coerce.number().int().positive().default(1),
     COUPANG_BASE_URL: z
-      .string()
       .url()
       .default("https://api-gateway.coupang.com"),
   })
