@@ -5,6 +5,8 @@ import {
   CoupangQueryParams,
   parseJsonLossless,
 } from "./coupang-json";
+import { Env } from "../config/env";
+import { ConfigService } from "@nestjs/config";
 
 /** The three values needed to call Coupang on behalf of one seller. */
 export interface CoupangCredentials {
@@ -52,6 +54,11 @@ const USER_AGENT = "coupang-analytics/0.1";
 @Injectable()
 export class CoupangClient {
   private readonly logger = new Logger(CoupangClient.name);
+  private readonly baseUrl: string;
+
+  constructor(cfg: ConfigService<Env, true>) {
+    this.baseUrl = cfg.get("COUPANG_BASE_URL", { infer: true });
+  }
 
   /**
    * Sends a signed GET request and returns the parsed JSON body.

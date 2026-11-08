@@ -33,7 +33,9 @@ describe("CoupangClient.get", () => {
 
   beforeEach(() => {
     fetchMock = vi.spyOn(globalThis, "fetch");
-    client = new TestClient();
+    client = new TestClient({
+      get: () => "https://api-gateway.coupang.com",
+    } as never);
   });
   afterEach(() => fetchMock.mockRestore());
 
