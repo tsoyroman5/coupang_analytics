@@ -10,7 +10,7 @@
 
 To run tasks with Nx use:
 
-```sh
+```sh0
 npx nx <target> <project-name>
 ```
 
