@@ -1,6 +1,6 @@
 // apps/api/src/coupang/coupang-connection.service.ts
 import { Inject, Injectable } from "@nestjs/common";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { DRIZZLE, Db } from "../db/db.module";
 import { coupangConnections } from "../db/schema";
 import { CredentialsCryptoService } from "../credentials/credentials-crypto.service";
@@ -9,6 +9,19 @@ import {
   CoupangClient,
   CoupangCredentials,
 } from "./coupang.client";
+
+/** Decrypted credentials plus the identifiers loaders need. */
+export interface ConnectionCredentials extends CoupangCredentials {
+  connectionId: string;
+  tenantId: string;
+}
+
+/** Non-secret view of a connection. Safe to log and to return to the UI. */
+export interface ConnectionSummary {
+  id: string;
+  tenantId: string;
+  vendorId: string;
+}
 
 const SELLER_PRODUCTS =
   "/v2/providers/seller_api/apis/api/v1/marketplace/seller-products";
@@ -22,19 +35,18 @@ export class CoupangConnectionService {
   ) {}
 
   /**
-   * Loads and decrypts the credentials of a single connection.
+   * Loads and decrypts the credentials of one connection.
    * @param connectionId - `app.coupang_connections.id`
-   * @throws Error if the connection doesn't exist
+   * @throws Error if the connection doesn't exist or can't be decrypted
    */
-  async getCredentials(
-    connectionId: string,
-  ): Promise<CoupangCredentials & { connectionId: string }> {
+  async getCredentials(connectionId: string): Promise<ConnectionCredentials> {
     const [row] = await this.db
       .select()
       .from(coupangConnections)
       .where(eq(coupangConnections.id, connectionId))
       .limit(1);
     if (!row) throw new Error(`Coupang connection ${connectionId} not found`);
+
     const { accessKey, secretKey } = this.crypto.open<{
       accessKey: string;
       secretKey: string;
@@ -46,6 +58,7 @@ export class CoupangConnectionService {
     });
     return {
       connectionId: row.id,
+      tenantId: row.tenantId,
       vendorId: row.vendorId,
       accessKey,
       secretKey,
@@ -53,12 +66,33 @@ export class CoupangConnectionService {
   }
 
   /**
+   * Lists connections with status `active`.
+   * @param tenantId - optional filter; omit to list across all tenants (scheduler use)
+   */
+  async listActive(tenantId?: string): Promise<ConnectionSummary[]> {
+    return this.db
+      .select({
+        id: coupangConnections.id,
+        tenantId: coupangConnections.tenantId,
+        vendorId: coupangConnections.vendorId,
+      })
+      .from(coupangConnections)
+      .where(
+        and(
+          eq(coupangConnections.status, "active"),
+          tenantId ? eq(coupangConnections.tenantId, tenantId) : undefined,
+        ),
+      );
+  }
+
+  /**
    * Verifies a connection with a cheap read-only call (seller products, 1 item)
    * and updates its status.
    *
-   * @returns `'active'` if the API accepted the credentials, `'invalid'` on 401/403
-   * @throws CoupangApiError or a network error for anything else: an outage isn't bad credentials,
-   *         so the status is left unchanged
+   * @returns `'active'` if Coupang accepted the credentials; `'invalid'` on 401/403
+   *          (wrong keys, or an IP whitelist change that hasn't applied yet, ~30 min)
+   * @throws CoupangApiError or a network error for anything else. An outage is not bad
+   *         credentials, so the status is left unchanged in that case.
    */
   async verify(connectionId: string): Promise<"active" | "invalid"> {
     const creds = await this.getCredentials(connectionId);
@@ -67,27 +101,32 @@ export class CoupangConnectionService {
         vendorId: creds.vendorId,
         maxPerPage: 1,
       });
-      await this.db
-        .update(coupangConnections)
-        .set({
-          status: "active",
-          lastVerifiedAt: new Date(),
-          updatedAt: new Date(),
-        })
-        .where(eq(coupangConnections.id, creds.connectionId));
+      await this.setStatus(connectionId, "active", new Date());
       return "active";
-    } catch (e) {
+    } catch (err) {
       if (
-        e instanceof CoupangApiError &&
-        (e.status === 401 || e.status === 403)
+        err instanceof CoupangApiError &&
+        (err.status === 401 || err.status === 403)
       ) {
-        await this.db
-          .update(coupangConnections)
-          .set({ status: "invalid", updatedAt: new Date() })
-          .where(eq(coupangConnections.id, creds.connectionId));
+        await this.setStatus(connectionId, "invalid");
         return "invalid";
       }
-      throw e; // network or 5xx: an outage isn't bad credentials
+      throw err;
     }
+  }
+
+  private async setStatus(
+    id: string,
+    status: "active" | "invalid",
+    verifiedAt?: Date,
+  ): Promise<void> {
+    await this.db
+      .update(coupangConnections)
+      .set({
+        status,
+        updatedAt: new Date(),
+        ...(verifiedAt ? { lastVerifiedAt: verifiedAt } : {}),
+      })
+      .where(eq(coupangConnections.id, id));
   }
 }
